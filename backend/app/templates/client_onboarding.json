@@ -1,0 +1,75 @@
+{
+  "name": "Client Onboarding Workflow",
+  "description": "Automated workflow for onboarding new clients",
+  "steps": [
+    {
+      "id": 1,
+      "name": "Create Jira Project",
+      "tool": "jira_create_project",
+      "parameters": {
+        "project_key": "{{client_code}}",
+        "project_name": "{{client_name}} Project",
+        "lead_account_id": "{{project_lead_id}}"
+      },
+      "expected_output": {
+        "type": "project_created",
+        "fields": ["project_key", "project_id"]
+      }
+    },
+    {
+      "id": 2,
+      "name": "Create Initial Tasks",
+      "tool": "jira_create_issue",
+      "parameters": {
+        "project_key": "{{client_code}}",
+        "summary": "Setup client environment",
+        "description": "Initial setup tasks for {{client_name}}",
+        "issue_type": "Task"
+      },
+      "depends_on": [1]
+    },
+    {
+      "id": 3,
+      "name": "Create Stripe Customer",
+      "tool": "stripe_create_customer",
+      "parameters": {
+        "email": "{{client_email}}",
+        "name": "{{client_name}}",
+        "description": "Client onboarded via automated workflow"
+      },
+      "expected_output": {
+        "type": "customer_created",
+        "fields": ["customer_id"]
+      }
+    },
+    {
+      "id": 4,
+      "name": "Setup Billing",
+      "tool": "stripe_create_subscription",
+      "parameters": {
+        "customer_id": "{{step_3_result.customer_id}}",
+        "price_id": "{{subscription_plan_id}}"
+      },
+      "depends_on": [3]
+    },
+    {
+      "id": 5,
+      "name": "Send Welcome Email",
+      "tool": "send_email",
+      "parameters": {
+        "to_email": "{{client_email}}",
+        "subject": "Welcome to Our Platform!",
+        "body": "Dear {{client_name}},\n\nWelcome! Your account has been set up.\n\nProject: {{step_1_result.project_key}}\n\nBest regards,\nThe Team",
+        "html": false
+      },
+      "depends_on": [1, 3]
+    }
+  ],
+  "input_schema": {
+    "client_name": "string",
+    "client_email": "string",
+    "client_code": "string",
+    "project_lead_id": "string",
+    "subscription_plan_id": "string"
+  }
+}
