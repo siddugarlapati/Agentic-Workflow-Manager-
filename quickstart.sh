@@ -25,12 +25,15 @@ docker-compose up -d
 
 echo ""
 echo "⏳ Waiting for services to be ready..."
-sleep 10
+sleep 15
+
+# Get the actual container name for backend
+BACKEND_CONTAINER=$(docker-compose ps -q backend)
 
 # Pull Ollama model
 echo ""
 echo "🤖 Pulling Llama 3.1 model (this may take a few minutes)..."
-docker exec workflow-manager-backend-1 sh -c "curl -X POST http://ollama:11434/api/pull -d '{\"name\":\"llama3.1\"}'" || true
+docker exec $BACKEND_CONTAINER sh -c "curl -X POST http://ollama:11434/api/pull -d '{\"name\":\"llama3.1\"}'" 2>/dev/null || echo "Note: Model will be pulled on first use"
 
 echo ""
 echo "✅ Setup complete!"
